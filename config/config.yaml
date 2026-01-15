@@ -1,0 +1,8 @@
+mission_executor:
+	ros__parameters:
+    z: 1.0
+    arrival_tol: 0.05
+    k_p: 0.5
+    max_vel: 0.2
+    rate_hz: 20.0
+    align_to_now: true

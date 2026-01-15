@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# ROS
+install/
+log/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Schedules (optional - remove if you want to commit them)
+schedule/*.json
+
+# OS
+.DS_Store
+Thumbs.db

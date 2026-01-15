@@ -1,0 +1,72 @@
+tasks:
+  - id: T1
+    location: [ 1.0,  4.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T2
+    location: [ 3.0,  3.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+  
+  - id: T3
+    location: [ 4.0,  4.5 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T4
+    location: [ 0.5,  2.5 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T5
+    location: [ 4.5,  1.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T6
+    location: [ 1.5,  1.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  # - id: T7
+  #   location: [ 2.0,  3.5 ]
+  #   duration_s: 15.0
+  #   type: MR
+  #   numb_robots: 2
+  #   formation: 'horizontal_line'
+  #   deps: [T1, T2]
+
+  # - id: T8
+  #   location: [ 4.0,  2.0 ]
+  #   duration_s: 15.0
+  #   type: MR
+  #   numb_robots: 2
+  #   formation: 'vertical_line'
+  #   deps: [T3, T5]
+
+  # - id: T9
+  #   location: [ 2.5,  2.0 ]
+  #   duration_s: 20.0
+  #   type: MR
+  #   numb_robots: 3
+  #   deps: [T7, T8]
+
+  # - id: T10
+  #   location: [ 3.0,  0.5 ]
+  #   duration_s: 5.0
+  #   type: SR
+  #   numb_robots: 1
+  #   deps: [T6, T8]
