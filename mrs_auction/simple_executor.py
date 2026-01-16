@@ -15,10 +15,6 @@ def robot_num(rid: str) -> Optional[int]:
     return int(m.group(1)) if m else None
 
 
-def yaw_from_quat(q) -> float:
-    return math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z))
-
-
 def kind_str(k: Any) -> str:
     return (k.name if hasattr(k, "name") else str(k)).split(".")[-1].upper()
 
@@ -34,10 +30,6 @@ class SimpleExecutor(Node):
             "max_vel": 0.25,
             "rate_hz": 20.0,
             "align_to_now": True,
-            "avoid_collisions": True,
-            "push_radius": 0.35,
-            "push_gain": 0.8,
-            "cmd_in_body_frame": True,
             "sync_mr_start": True,
         }.items():
             self.declare_parameter(k, v)
@@ -48,10 +40,6 @@ class SimpleExecutor(Node):
         self.max_vel = float(gp("max_vel"))
         self.rate_hz = float(gp("rate_hz"))
         self.align_to_now = bool(gp("align_to_now"))
-        self.avoid_collisions = bool(gp("avoid_collisions"))
-        self.push_radius = float(gp("push_radius"))
-        self.push_gain = float(gp("push_gain"))
-        self.cmd_in_body_frame = bool(gp("cmd_in_body_frame"))
         self.sync_mr_start = bool(gp("sync_mr_start"))
 
         self.robot_id = robot_id
@@ -130,11 +118,6 @@ class SimpleExecutor(Node):
         if sp > self.max_vel:
             k = self.max_vel / max(sp, 1e-6)
             vx, vy = vx * k, vy * k
-
-        if self.cmd_in_body_frame:
-            yaw = yaw_from_quat(self.pose.pose.orientation)
-            cy, sy = math.cos(yaw), math.sin(yaw)
-            vx, vy = cy * vx + sy * vy, -sy * vx + cy * vy
 
         msg = Twist()
         msg.linear.x, msg.linear.y = float(vx), float(vy)
