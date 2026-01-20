@@ -1,10 +1,10 @@
 tasks:
-  # - id: T1
-  #   location: [ 1.0,  4.0 ]
-  #   duration_s: 5.0
-  #   type: SR
-  #   numb_robots: 1
-  #   deps: []
+  - id: T1
+    location: [ 1.0,  4.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
 
   # - id: T2
   #   location: [ 3.0,  3.0 ]
@@ -41,13 +41,13 @@ tasks:
   #   numb_robots: 1
   #   deps: []
 
-  - id: T1
-    location: [ 2.0,  3.5 ]
-    duration_s: 15.0
-    type: MR
-    numb_robots: 2
-    formation: 'horizontal_line'
-    deps: []
+  # - id: T7
+  #   location: [ 2.0,  3.5 ]
+  #   duration_s: 15.0
+  #   type: MR
+  #   numb_robots: 2
+  #   formation: 'horizontal_line'
+  #   deps: []
 
   # - id: T8
   #   location: [ 4.0,  2.0 ]
