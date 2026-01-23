@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import itertools
+import json
+import os
 import yaml
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 from mrs_auction.auction_def import PrecedenceGraph, RobotSpec, TaskSpec
@@ -196,9 +199,19 @@ def load_robots(path: str) -> List[RobotSpec]:
 
 
 if __name__ == "__main__":
+    config_dir = os.path.join(os.path.dirname(__file__), '..', 'config')
     auction = Auction(
-        tasks_yaml="/root/ros2_ws/src/mrs_auction/config/tasks.yaml",
-        robots_yaml="/root/ros2_ws/src/mrs_auction/config/robots.yaml",
+        tasks_yaml=os.path.join(config_dir, 'tasks.yaml'),
+        robots_yaml=os.path.join(config_dir, 'robots.yaml'),
     )
     sol = auction.make_solution()
     print("Final solution:", sol)
+    
+    # Save the solution to a JSON file
+    schedule_dir = os.path.join(os.path.dirname(__file__), '..', 'schedule')
+    os.makedirs(schedule_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    schedule_file = os.path.join(schedule_dir, f"schedule_{timestamp}.json")
+    with open(schedule_file, 'w') as f:
+        json.dump(sol, f, indent=4)
+    print(f"Schedule saved to {schedule_file}")

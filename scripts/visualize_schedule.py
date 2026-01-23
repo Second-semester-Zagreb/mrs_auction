@@ -131,7 +131,7 @@ def visualize_gantt(schedule, output_file=None):
 def main():
     if len(sys.argv) < 2:
         # If no argument provided, try to find the most recent schedule file
-        schedule_dir = "/root/ros2_ws/src/mrs_auction/schedule"
+        schedule_dir = os.path.join(os.path.dirname(__file__), '..', 'schedule')
         if os.path.exists(schedule_dir):
             files = sorted([f for f in os.listdir(schedule_dir) if f.startswith('schedule_') and f.endswith('.json')])
             if files:

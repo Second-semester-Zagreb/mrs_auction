@@ -15,6 +15,7 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
         (os.path.join('share', package_name, 'scripts'), glob('scripts/*')),
+        (os.path.join('share', package_name, 'schedule'), glob('schedule/*.json')),
     ],
     install_requires=['setuptools', 'networkx'],
     zip_safe=True,
@@ -31,6 +32,7 @@ setup(
         'console_scripts': [
             'mission_executor_node = mrs_auction.mission_executor:main',
             'simple_executor_node = mrs_auction.simple_executor:main',
+            'manager_node = mrs_auction.manager:main',
         ],
     },
     scripts=[
