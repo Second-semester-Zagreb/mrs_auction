@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     launch_description = []
-    number_of_robots = int(os.environ.get("NUM_ROBOTS", "2"))
+    number_of_robots = int(os.environ.get("NUM_ROBOTS", "1"))
 
     launch_description.append(
         SetEnvironmentVariable(name="NUM_ROBOTS", value=str(number_of_robots))

@@ -149,46 +149,46 @@ def main():
         print("  python3 test_land_takeoff.py 1 go_to 0 0 0.5")
         sys.exit(1)
     
-    # robot_num = int(sys.argv[1])
-    # node = LandTakeoffTester(robot_num)
+    robot_num = int(sys.argv[1])
+    node = LandTakeoffTester(robot_num)
     
-    # command = sys.argv[2] if len(sys.argv) > 2 else None
+    command = sys.argv[2] if len(sys.argv) > 2 else None
     
-    # try:
-    #     if command == "takeoff":
-    #         height = float(sys.argv[3]) if len(sys.argv) > 3 else 0.5
-    #         duration = float(sys.argv[4]) if len(sys.argv) > 4 else 2.0
-    #         node.test_takeoff(height, duration)
+    try:
+        if command == "takeoff":
+            height = float(sys.argv[3]) if len(sys.argv) > 3 else 0.5
+            duration = float(sys.argv[4]) if len(sys.argv) > 4 else 2.0
+            node.test_takeoff(height, duration)
             
-    #     elif command == "land":
-    #         height = float(sys.argv[3]) if len(sys.argv) > 3 else 0.05
-    #         duration = float(sys.argv[4]) if len(sys.argv) > 4 else 3.0
-    #         node.test_land(height, duration)
+        elif command == "land":
+            height = float(sys.argv[3]) if len(sys.argv) > 3 else 0.05
+            duration = float(sys.argv[4]) if len(sys.argv) > 4 else 3.0
+            node.test_land(height, duration)
             
-    #     elif command == "go_to":
-    #         if len(sys.argv) < 5:
-    #             print("Error: go_to requires x, y, z arguments")
-    #             sys.exit(1)
-    #         x = float(sys.argv[3])
-    #         y = float(sys.argv[4])
-    #         z = float(sys.argv[5])
-    #         duration = float(sys.argv[6]) if len(sys.argv) > 6 else 5.0
-    #         node.test_go_to(x, y, z, duration)
+        elif command == "go_to":
+            if len(sys.argv) < 5:
+                print("Error: go_to requires x, y, z arguments")
+                sys.exit(1)
+            x = float(sys.argv[3])
+            y = float(sys.argv[4])
+            z = float(sys.argv[5])
+            duration = float(sys.argv[6]) if len(sys.argv) > 6 else 5.0
+            node.test_go_to(x, y, z, duration)
             
-    #     else:
-    #         print(f"Unknown command: {command}")
-    #         sys.exit(1)
+        else:
+            print(f"Unknown command: {command}")
+            sys.exit(1)
             
-    # except Exception as e:
-    #     print(f"\nError: {e}")
-    #     import traceback
-    #     traceback.print_exc()
-    #     sys.exit(1)
-    # finally:
-    #     node.destroy_node()
-    #     rclpy.shutdown()
+    except Exception as e:
+        print(f"\nError: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
     
-    # print()
+    print()
 
 
 if __name__ == "__main__":
