@@ -1,0 +1,81 @@
+tasks:
+  - id: T1
+    location: [ 0.5,  0.7 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T2
+    location: [ 0.7,  1.8 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T3
+    location: [ -1.5,  1.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T4
+    location: [ -1.6,  1.6 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T5
+    location: [ 1.0,  0.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
+
+  - id: T6
+    location: [ 0.25,  -0.5 ]
+    duration_s: 15.0
+    type: MR
+    numb_robots: 2
+    formation: 'horizontal'
+    deps: [T5]
+
+  - id: T7
+    location: [ -0.5,  1.25 ]
+    duration_s: 20.0
+    type: MR
+    numb_robots: 3
+    formation: 'triangle'
+    deps: [T1, T2]
+
+  - id: T8
+    location: [ 0.8,  0.9 ]
+    duration_s: 15.0
+    type: MR
+    numb_robots: 4
+    formation: 'square'
+    deps: [T1, T2, T3]
+
+  - id: T9
+    location: [ -0.4, -0.75 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: [T1, T6]
+
+  - id: T10
+    location: [ -0.75,  0.0 ]
+    duration_s: 15.0
+    type: MR
+    numb_robots: 2
+    formation: 'vertical'
+    deps: [T6, T7]
+
+  - id: T11
+    location: [ -0.1,  0.3 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: [T9]

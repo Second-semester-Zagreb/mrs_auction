@@ -6,47 +6,47 @@ tasks:
     numb_robots: 1
     deps: []
 
-  # - id: T2
-  #   location: [ 3.0,  3.0 ]
-  #   duration_s: 5.0
-  #   type: SR
-  #   numb_robots: 1
-  #   deps: []
+  - id: T2
+    location: [ 3.0,  3.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
   
-  # - id: T3
-  #   location: [ 4.0,  4.5 ]
-  #   duration_s: 5.0
-  #   type: SR
-  #   numb_robots: 1
-  #   deps: []
+  - id: T3
+    location: [ 4.0,  4.5 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
 
-  # - id: T4
-  #   location: [ 0.5,  2.5 ]
-  #   duration_s: 5.0
-  #   type: SR
-  #   numb_robots: 1
-  #   deps: []
+  - id: T4
+    location: [ 0.5,  2.5 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
 
-  # - id: T5
-  #   location: [ 4.5,  1.0 ]
-  #   duration_s: 5.0
-  #   type: SR
-  #   numb_robots: 1
-  #   deps: []
+  - id: T5
+    location: [ 4.5,  1.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
 
-  # - id: T6
-  #   location: [ 1.5,  1.0 ]
-  #   duration_s: 5.0
-  #   type: SR
-  #   numb_robots: 1
-  #   deps: []
+  - id: T6
+    location: [ 1.5,  1.0 ]
+    duration_s: 5.0
+    type: SR
+    numb_robots: 1
+    deps: []
 
   - id: T7
     location: [ 2.0,  3.5 ]
     duration_s: 15.0
     type: MR
     numb_robots: 2
-    formation: 'horizontal_line'
+    formation: 'horizontal'
     deps: []
 
   - id: T8
@@ -54,7 +54,7 @@ tasks:
     duration_s: 15.0
     type: MR
     numb_robots: 2
-    formation: 'vertical_line'
+    formation: 'vertical'
     deps: [T3, T5]
 
   - id: T9
