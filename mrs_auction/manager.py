@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy, HistoryPolicy
+from rclpy.qos import QoSProfile, DurabilityPolicy, HistoryPolicy, ReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker, MarkerArray
@@ -60,9 +60,10 @@ class AuctionManager(Node):
         
         # publisher for formation commands. This is for the consensus node :)
         qos_profile = QoSProfile(
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
             history=HistoryPolicy.KEEP_LAST,
-            depth=1
+            depth=10
         )
         self.publisher = self.create_publisher(String, '/swarm_formation_cmd', qos_profile)
         
@@ -103,6 +104,8 @@ class AuctionManager(Node):
     def timer_callback(self):
         current_sim_time = (self.get_clock().now() - self.start_time).nanoseconds / 1e9
         
+        new_task_assignments = {} # {task_id: [robot_ids]}
+        
         changes_made = False
         finished_all = True
 
@@ -126,7 +129,7 @@ class AuctionManager(Node):
                 else:
                     finished_all = False
             
-            #check if we should start the next task
+            # check if we should start the next task
             if next_idx < len(queue):
                 finished_all = False
                 # start the first task at t=0, or subsequent tasks when the previous one finishes
@@ -144,7 +147,8 @@ class AuctionManager(Node):
                     if rid not in self.ready_robots_per_task[tid]:
                         self.ready_robots_per_task[tid].append(rid)
                     
-                    self.publish_robot_task(tid, self.ready_robots_per_task[tid])
+                    # Store to publish once after the loop
+                    new_task_assignments[tid] = self.ready_robots_per_task[tid]
                     self.active_tasks.add(tid)
 
                     #safety check
@@ -152,7 +156,12 @@ class AuctionManager(Node):
                         self.completed_tasks.remove(tid)
                     changes_made = True
         
-        self.publish_markers()
+        # Publish only ONCE per task per transition
+        for tid, rids in new_task_assignments.items():
+            self.publish_robot_task(tid, rids)
+        
+        if changes_made:
+            self.publish_markers()
         
         if finished_all and not self.landing_sent:
             self.landing_sent = True

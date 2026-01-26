@@ -17,7 +17,7 @@ def generate_launch_description():
     
     tasks_config_arg = DeclareLaunchArgument(
         'tasks_config',
-        default_value=os.path.join(get_package_share_directory(package_name), 'config', 'tasks.yaml'),
+        default_value=os.path.join(get_package_share_directory(package_name), 'config', 'custom_tasks.yaml'),
         description='Full path to the tasks configuration YAML file'
     )
 

@@ -46,7 +46,7 @@ tasks:
     duration_s: 15.0
     type: MR
     numb_robots: 2
-    formation: 'horizontal'
+    formation: 'horizontal_line'
     deps: []
 
   - id: T8
@@ -54,7 +54,7 @@ tasks:
     duration_s: 15.0
     type: MR
     numb_robots: 2
-    formation: 'vertical'
+    formation: 'vertical_line'
     deps: [T3, T5]
 
   - id: T9

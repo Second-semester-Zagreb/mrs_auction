@@ -37,6 +37,21 @@ class Bidder:
             if not temp.is_valid():
                 continue
 
+            # MR Stability Guard: 
+            # If we inserted before existing tasks, ensure we didn't shift any MR task.
+            # Shifting an MR task on one robot but not others causes desynchronization.
+            if idx < len(base.items):
+                shifted_mr = False
+                for j in range(idx, len(base.items)):
+                    old_task_id = base.items[j].task_id
+                    if self.tasks[old_task_id].kind == "MR":
+                        # Check if start time changed significantly
+                        if abs(temp.items[j+1].start - base.items[j].start) > 1e-3:
+                            shifted_mr = True
+                            break
+                if shifted_mr:
+                    continue
+
             tstart = next(e.start for e in temp.items if e.task_id == task_id)
             cand = BidResult(
                 robot_id=self.robot.robot_id,

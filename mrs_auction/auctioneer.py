@@ -201,7 +201,7 @@ def load_robots(path: str) -> List[RobotSpec]:
 if __name__ == "__main__":
     config_dir = os.path.join(os.path.dirname(__file__), '..', 'config')
     auction = Auction(
-        tasks_yaml=os.path.join(config_dir, 'tasks.yaml'),
+        tasks_yaml=os.path.join(config_dir, 'custom_tasks.yaml'),
         robots_yaml=os.path.join(config_dir, 'robots.yaml'),
     )
     sol = auction.make_solution()
