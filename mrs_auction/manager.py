@@ -57,6 +57,8 @@ class AuctionManager(Node):
         self.robot_task_index = {rid: -1 for rid in self.schedule.keys()}
         self.ready_robots_per_task = {} 
         self.landing_sent = False
+        self.warmup_duration = 5.0 # Seconds to wait before starting the clock
+        self.last_republish_time = 0.0
         
         # publisher for formation commands. This is for the consensus node :)
         qos_profile = QoSProfile(
@@ -67,8 +69,14 @@ class AuctionManager(Node):
         )
         self.publisher = self.create_publisher(String, '/swarm_formation_cmd', qos_profile)
         
-        # publisher for RViz markers. I think it looks cool but you guys tell me if you like it
-        self.marker_publisher = self.create_publisher(MarkerArray, '/tasks_markers', 10)
+        # publisher for RViz markers.
+        marker_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        self.marker_publisher = self.create_publisher(MarkerArray, '/tasks_markers', marker_qos)
         
         # active tasks tracking for visualization
         self.active_tasks = set()
@@ -102,7 +110,17 @@ class AuctionManager(Node):
             return {}
 
     def timer_callback(self):
-        current_sim_time = (self.get_clock().now() - self.start_time).nanoseconds / 1e9
+        now = self.get_clock().now()
+        elapsed = (now - self.start_time).nanoseconds / 1e9
+        
+        if elapsed < self.warmup_duration:
+            # Still warming up, just publish markers and wait
+            if int(elapsed * 10) % 10 == 0: # Log every second
+                self.get_logger().info(f'Warming up... Mission starts in {self.warmup_duration - elapsed:.1f}s', throttle_duration_sec=1.0)
+            self.publish_markers()
+            return
+
+        current_sim_time = elapsed - self.warmup_duration
         
         new_task_assignments = {} # {task_id: [robot_ids]}
         
@@ -160,7 +178,26 @@ class AuctionManager(Node):
         for tid, rids in new_task_assignments.items():
             self.publish_robot_task(tid, rids)
         
-        if changes_made:
+        # Periodic republish (every 1.0s) of ALL active tasks to handle packet loss
+        if current_sim_time - self.last_republish_time >= 1.0:
+            self.last_republish_time = current_sim_time
+            # Keep active tasks alive by republishing to anyone who missed it
+            active_by_task = {} # tid -> [rids]
+            for rid, queue in self.robot_queues.items():
+                idx = self.robot_task_index[rid]
+                if idx >= 0:
+                    tid = queue[idx]['task_id']
+                    if tid in self.active_tasks:
+                        if tid not in active_by_task: active_by_task[tid] = []
+                        active_by_task[tid].append(rid)
+            
+            for tid, rids in active_by_task.items():
+                self.publish_robot_task(tid, rids)
+            
+            # Marker republish
+            self.publish_markers()
+        
+        elif changes_made:
             self.publish_markers()
         
         if finished_all and not self.landing_sent:
