@@ -1,16 +1,16 @@
 robots:
   - id: R1
-    start_location: [-0.5, -4.0]
-    speed_m_s: 0.25
+    start_location: [-0.7, -1.4]
+    speed_m_s: 0.1
 
   - id: R2
-    start_location: [0.5, -4.0]
-    speed_m_s: 0.25
+    start_location: [-1.4, -1.0]
+    speed_m_s: 0.1
 
   - id: R3
-    start_location: [-0.5, -4.5]
-    speed_m_s: 0.25
+    start_location: [-0.6, -0.85]
+    speed_m_s: 0.1
   
   - id: R4
-    start_location: [0.5, -4.5]
-    speed_m_s: 0.25
+    start_location: [-1.4, -0.9]
+    speed_m_s: 0.1
