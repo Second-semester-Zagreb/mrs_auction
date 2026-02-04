@@ -47,10 +47,10 @@ tasks:
     type: MR
     numb_robots: 2
     formation: 'horizontal_line'
-    deps: []
+    deps: [T1,T2]
 
   - id: T8
-    location: [ 4.0,  2.0 ]
+    location: [ 4.0,  2.5 ]
     duration_s: 15.0
     type: MR
     numb_robots: 2

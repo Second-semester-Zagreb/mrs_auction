@@ -199,19 +199,48 @@ def load_robots(path: str) -> List[RobotSpec]:
 
 
 if __name__ == "__main__":
-    config_dir = os.path.join(os.path.dirname(__file__), '..', 'config')
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='MRS Auctioneer')
+    parser.add_argument('--tasks', type=str, help='Path to tasks YAML file')
+    parser.add_argument('--robots', type=str, help='Path to robots YAML file')
+    parser.add_argument('--output', type=str, help='Output filename for the schedule')
+    
+    args = parser.parse_args()
+    
+    # Resolve default paths relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_dir = os.path.join(script_dir, '..', 'config')
+    
+    tasks_yaml = args.tasks if args.tasks else os.path.join(config_dir, 'custom_tasks.yaml')
+    robots_yaml = args.robots if args.robots else os.path.join(config_dir, 'robots.yaml')
+    
+    if not os.path.exists(tasks_yaml):
+        # Fallback to tasks.yaml if custom_tasks.yaml is missing
+        backup = os.path.join(config_dir, 'tasks.yaml')
+        if os.path.exists(backup):
+            print(f"Warning: {tasks_yaml} not found, falling back to {backup}")
+            tasks_yaml = backup
+
+    print(f"Using tasks: {tasks_yaml}")
+    print(f"Using robots: {robots_yaml}")
+
     auction = Auction(
-        tasks_yaml=os.path.join(config_dir, 'custom_tasks.yaml'),
-        robots_yaml=os.path.join(config_dir, 'robots.yaml'),
+        tasks_yaml=tasks_yaml,
+        robots_yaml=robots_yaml,
     )
     sol = auction.make_solution()
-    print("Final solution:", sol)
     
     # Save the solution to a JSON file
-    schedule_dir = os.path.join(os.path.dirname(__file__), '..', 'schedule')
+    schedule_dir = os.path.join(script_dir, '..', 'schedule')
     os.makedirs(schedule_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    schedule_file = os.path.join(schedule_dir, f"schedule_{timestamp}.json")
+    
+    if args.output:
+        schedule_file = os.path.join(schedule_dir, args.output)
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        schedule_file = os.path.join(schedule_dir, f"schedule_{timestamp}.json")
+        
     with open(schedule_file, 'w') as f:
         json.dump(sol, f, indent=4)
     print(f"Schedule saved to {schedule_file}")

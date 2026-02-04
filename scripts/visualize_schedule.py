@@ -66,7 +66,7 @@ def visualize_gantt(schedule, output_file=None):
                 if travel_time > 0.5:  # Only show text if segment is wide enough
                     mid_travel = current_time + travel_time / 2
                     ax.text(mid_travel, y_pos, 'Travel', ha='center', va='center',
-                           fontsize=8, style='italic', alpha=0.7)
+                           fontsize=10, style='italic', alpha=0.7)
             
             # Update current time to task start
             current_time = start
@@ -88,7 +88,7 @@ def visualize_gantt(schedule, output_file=None):
             # Add task label in the middle of the bar
             mid_time = current_time + duration / 2
             ax.text(mid_time, y_pos, task_name, ha='center', va='center',
-                   fontsize=9, fontweight='bold')
+                   fontsize=11, fontweight='bold')
             
             # Update current time to task end
             current_time = end
@@ -97,10 +97,11 @@ def visualize_gantt(schedule, output_file=None):
     
     # Set labels and title
     ax.set_yticks(y_ticks)
-    ax.set_yticklabels(y_labels)
-    ax.set_xlabel('Time (seconds)', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Robots', fontsize=12, fontweight='bold')
-    ax.set_title('Mission Schedule (with Travel Times)', fontsize=14, fontweight='bold')
+    ax.set_yticklabels(y_labels, fontsize=12)
+    ax.tick_params(axis='x', labelsize=12)
+    ax.set_xlabel('Time (seconds)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Robots', fontsize=14, fontweight='bold')
+    ax.set_title('Mission Schedule (with Travel Times)', fontsize=18, fontweight='bold')
     
     # Add grid
     ax.grid(True, axis='x', alpha=0.3, linestyle='--')
@@ -113,7 +114,7 @@ def visualize_gantt(schedule, output_file=None):
     for task in sorted(colors.keys()):
         legend_items.append(mpatches.Patch(facecolor=colors[task], edgecolor='black', label=task))
     
-    ax.legend(handles=legend_items, loc='upper right', bbox_to_anchor=(1.15, 1))
+    ax.legend(handles=legend_items, loc='upper right', bbox_to_anchor=(1.15, 1), fontsize=12)
     
     # Adjust layout
     plt.tight_layout()

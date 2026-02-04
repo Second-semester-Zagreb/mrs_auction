@@ -27,7 +27,7 @@ class AuctionManager(Node):
         package_share = get_package_share_directory('mrs_auction')
 
         if not os.path.isabs(tasks_config_path):
-            tasks_config_path = os.path.join(package_share, 'config', tasks_config_path if tasks_config_path else 'tasks.yaml')
+            tasks_config_path = os.path.join(package_share, 'config', tasks_config_path if tasks_config_path else 'custom_tasks.yaml')
         
         if not os.path.exists(tasks_config_path):
             self.get_logger().error(f'Tasks config not found: {tasks_config_path}')
@@ -35,6 +35,7 @@ class AuctionManager(Node):
 
         # Load tasks configuration to get locations and formations
         self.tasks_data = self.load_tasks_config(tasks_config_path)
+        self.all_task_ids = list(self.tasks_data.keys())
         
         schedule_path = self.resolve_schedule_path(schedule_arg)
         if not schedule_path:
@@ -45,13 +46,32 @@ class AuctionManager(Node):
         
         # flatten schedule into per-robot queues. Its how we discussed it. Each robot has a queue of tasks
         self.robot_queues = {rid: [] for rid in self.schedule.keys()}
+        scheduled_robots_per_task = {} # tid -> count
+        
         for rid, data in self.schedule.items():
             for i in range(len(data['name'])):
+                tid = data['name'][i]
                 self.robot_queues[rid].append({
-                    'task_id': data['name'][i],
+                    'task_id': tid,
                     'start_time': data['time'][i][0],
                     'finish_time': data['time'][i][1]
                 })
+                if tid not in scheduled_robots_per_task:
+                    scheduled_robots_per_task[tid] = 0
+                scheduled_robots_per_task[tid] += 1
+
+        # Consistency check: Schedule vs Config
+        for tid, count in scheduled_robots_per_task.items():
+            if tid in self.tasks_data:
+                required = self.tasks_data[tid].get('numb_robots', 1)
+                if count != required:
+                    self.get_logger().error(f'CONSISTENCY ERROR: Task {tid} requires {required} robots but schedule has {count}!')
+            else:
+                self.get_logger().error(f'CONSISTENCY ERROR: Task {tid} in schedule NOT FOUND in tasks config!')
+
+        self.get_logger().info(f'Loaded robots: {list(self.robot_queues.keys())}')
+        for rid, q in self.robot_queues.items():
+            self.get_logger().info(f'Robot {rid} has {len(q)} tasks in queue.')
 
         # tracked states
         self.robot_task_index = {rid: -1 for rid in self.schedule.keys()}
@@ -59,6 +79,19 @@ class AuctionManager(Node):
         self.landing_sent = False
         self.warmup_duration = 5.0 # Seconds to wait before starting the clock
         self.last_republish_time = 0.0
+        
+        # Track which robots are assigned to which task
+        self.task_assignments = {} # {tid: set(rids)}
+        for rid, data in self.schedule.items():
+            for tid in data['name']:
+                if tid not in self.task_assignments:
+                    self.task_assignments[tid] = set()
+                self.task_assignments[tid].add(rid)
+
+        # Dynamic scheduling states
+        self.robot_arrivals = {tid: set() for tid in self.all_task_ids}
+        self.task_start_time = {} # {tid: timestamp}
+        self.task_status = {tid: 'PENDING' for tid in self.all_task_ids}
         
         # publisher for formation commands. This is for the consensus node :)
         qos_profile = QoSProfile(
@@ -81,16 +114,24 @@ class AuctionManager(Node):
         # active tasks tracking for visualization
         self.active_tasks = set()
         self.completed_tasks = set()
-        self.all_task_ids = list(self.tasks_data.keys())
         
         # timer to check for transitions (10Hz for precision)
         self.start_time = self.get_clock().now()
+        
+        # Subscriber for robot status updates
+        self.status_subscriber = self.create_subscription(
+            String,
+            '/swarm_task_status',
+            self.status_callback,
+            10
+        )
+        
         self.timer = self.create_timer(0.1, self.timer_callback)
         
         # Initial marker publish
         self.publish_markers()
         
-        self.get_logger().info(f'Auction Manager started. Robots will start moving to their first tasks.')
+        self.get_logger().info(f'Auction Manager (DIAGNOSTIC VERSION) started.')
 
     def load_tasks_config(self, path):
         try:
@@ -109,6 +150,31 @@ class AuctionManager(Node):
             self.get_logger().error(f'Failed to load schedule: {e}')
             return {}
 
+    def status_callback(self, msg):
+        try:
+            data = json.loads(msg.data)
+            tid = data.get('task_id')
+            rid = data.get('robot_id')
+            status = data.get('status')
+            
+            # Since robot IDs might be "cf_1" or "1" or "R1", we normalize
+            rid_str = f"R{rid}" if isinstance(rid, int) else rid
+            if not rid_str.startswith('R'):
+                rid_str = rid_str.replace('cf_', 'R')
+
+            if status == 'ARRIVED' and tid in self.robot_arrivals:
+                if rid_str not in self.robot_arrivals[tid]:
+                    self.robot_arrivals[tid].add(rid_str)
+                    self.get_logger().info(f'Robot {rid_str} arrived at {tid}. Progress: {len(self.robot_arrivals[tid])}/{len(self.task_assignments.get(tid, []))}')
+                
+                # Check if all assigned robots arrived
+                assigned = self.task_assignments.get(tid, set())
+                if tid not in self.task_start_time and assigned.issubset(self.robot_arrivals[tid]):
+                    self.task_start_time[tid] = self.get_clock().now()
+                    self.get_logger().warn(f'TASK {tid} EXECUTION STARTED (all robots arrived).')
+        except Exception as e:
+            self.get_logger().error(f'Error in status callback: {e}')
+
     def timer_callback(self):
         now = self.get_clock().now()
         elapsed = (now - self.start_time).nanoseconds / 1e9
@@ -121,58 +187,67 @@ class AuctionManager(Node):
             return
 
         current_sim_time = elapsed - self.warmup_duration
-        
-        new_task_assignments = {} # {task_id: [robot_ids]}
+        now = self.get_clock().now()
         
         changes_made = False
         finished_all = True
+
+        # 1. Update Completion Status based on duration
+        for tid in list(self.active_tasks):
+            if tid in self.task_start_time:
+                duration = self.tasks_data.get(tid, {}).get('duration_s', 5.0)
+                elapsed_task = (now - self.task_start_time[tid]).nanoseconds / 1e9
+                if elapsed_task >= duration:
+                    self.active_tasks.remove(tid)
+                    self.completed_tasks.add(tid)
+                    self.task_status[tid] = 'COMPLETED'
+                    self.get_logger().info(f'TASK {tid} COMPLETED after {duration}s.')
+                    changes_made = True
+
+        # 2. Check for transitions
+        new_task_assignments = {} # {task_id: [robot_ids]}
 
         for rid, queue in self.robot_queues.items():
             curr_idx = self.robot_task_index[rid]
             next_idx = curr_idx + 1
             
-            # Check if current task finished
+            # If current task is finished, we can move to next
+            can_move_from_current = True
             if curr_idx >= 0:
-                curr_task = queue[curr_idx]
-                if current_sim_time >= curr_task['finish_time']:
-                    # robot has finished this task's work time
-                    tid = curr_task['task_id']
-                    if tid in self.ready_robots_per_task and rid in self.ready_robots_per_task[tid]:
-                        self.ready_robots_per_task[tid].remove(rid)
-                        if len(self.ready_robots_per_task[tid]) == 0:
-                            if tid in self.active_tasks:
-                                self.active_tasks.remove(tid)
-                            self.completed_tasks.add(tid)
-                            changes_made = True
-                else:
+                tid = queue[curr_idx]['task_id']
+                if tid not in self.completed_tasks:
+                    can_move_from_current = False
                     finished_all = False
             
-            # check if we should start the next task
             if next_idx < len(queue):
                 finished_all = False
-                # start the first task at t=0, or subsequent tasks when the previous one finishes
-                dispatch_time = 0.0 if next_idx == 0 else queue[curr_idx]['finish_time']
-                
-                if current_sim_time >= dispatch_time:
-                    # Move to next task
-                    self.robot_task_index[rid] = next_idx
-                    next_task = queue[next_idx]
-                    tid = next_task['task_id']
+                if can_move_from_current:
+                    next_tid = queue[next_idx]['task_id']
                     
-                    # Update ready robots for this task
-                    if tid not in self.ready_robots_per_task:
-                        self.ready_robots_per_task[tid] = []
-                    if rid not in self.ready_robots_per_task[tid]:
-                        self.ready_robots_per_task[tid].append(rid)
+                    # Check dependencies
+                    deps = self.tasks_data.get(next_tid, {}).get('deps', [])
+                    deps_met = all(dep in self.completed_tasks for dep in deps)
                     
-                    # Store to publish once after the loop
-                    new_task_assignments[tid] = self.ready_robots_per_task[tid]
-                    self.active_tasks.add(tid)
-
-                    #safety check
-                    if tid in self.completed_tasks:
-                        self.completed_tasks.remove(tid)
-                    changes_made = True
+                    if next_idx == 0:
+                        self.get_logger().info(f'Robot {rid} first task: {next_tid}. Deps: {deps}', throttle_duration_sec=2.0)
+                    
+                    if deps_met:
+                        # Move to next task!
+                        self.get_logger().warn(f'Robot {rid} transitioning to {next_tid}')
+                        self.robot_task_index[rid] = next_idx
+                        tid = next_tid
+                        
+                        if tid not in self.ready_robots_per_task:
+                            self.ready_robots_per_task[tid] = []
+                        if rid not in self.ready_robots_per_task[tid]:
+                            self.ready_robots_per_task[tid].append(rid)
+                        
+                        new_task_assignments[tid] = self.ready_robots_per_task[tid]
+                        self.active_tasks.add(tid)
+                        self.task_status[tid] = 'ACTIVE'
+                        changes_made = True
+            elif not can_move_from_current:
+                finished_all = False
         
         # Publish only ONCE per task per transition
         for tid, rids in new_task_assignments.items():
@@ -266,8 +341,11 @@ class AuctionManager(Node):
         if not all_files:
             return None
             
-        #Return the one with latest modification time
-        return max(all_files, key=os.path.getmtime)
+        # Return the one with the latest modification time.
+        # Ensure we favor the most recent timestamp in filename if mtimes are weird
+        all_files.sort(reverse=True) # Usually keeps filenames in order if they start with timestamp
+        latest = max(all_files, key=os.path.getmtime)
+        return latest
 
     def publish_robot_task(self, task_id, ready_robot_ids):
         #We publish the command for the task, but with the list of currently ready robots
